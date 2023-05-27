@@ -48,6 +48,12 @@ Gender.belongsToMany(Serie, {
 	timestamps: false
 })
 
+Personage.hasMany(Image)
+Image.belongsTo(Personage)
+
+Serie.hasMany(Personage)
+Personage.belongsTo(Serie)
+
 module.exports = {
 	...sequelize.models,
 	db: sequelize
