@@ -61,7 +61,7 @@ Ability.belongsToMany(Personage, {
 
 // Post
 
-Post.hasHooks(Text);
+Post.hasMany(Text);
 Text.belongsTo(Post);
 
 Post.hasMany(Article);

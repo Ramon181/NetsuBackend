@@ -4,6 +4,7 @@ const personageRoute = require("./personage/personage.js")
 const userRoute = require("./user/user.js")
 const genderRoute = require("./gender/gender.js")
 const serieRoute = require("./serie/serie.js")
+const postRoute = require("./post/post.js")
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use("/personage", personageRoute)
 router.use("/gender", genderRoute);
 router.use("/user", userRoute)
 router.use("/serie", serieRoute)
+router.use("/post", postRoute)
 
 module.exports = router;
