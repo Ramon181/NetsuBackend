@@ -2,7 +2,7 @@ const {DataTypes} = require("sequelize");
 
 module.exports = (sequelize) => {
 	sequelize.define("text", {
-		description: {
+		text: {
 			type:DataTypes.TEXT,
 			allowNull:false
 		},

@@ -1,8 +1,8 @@
 const {DataTypes} = require("sequelize");
 
 module.exports = (sequelize) => {
-	sequelize.define("image_post", {
-		url: {
+	sequelize.define("article", {
+		article: {
 			type:DataTypes.STRING,
 			allowNull:false
 		}

@@ -13,31 +13,31 @@ router.post("/", async (req, res) => {
     state,
     race,
     img,
-	serieId,
+    serieId,
     photos,
     ability,
   } = req.body;
   try {
-	//   console.log("name:" + name,"description:" +  description,"age:" + age,"height:" + height, "weight:" + weight, "serie:" + serie, "photos:" + photos, "ability:" + ability, "race:" + race, "img:" + img, )
+    //   console.log("name:" + name,"description:" +  description,"age:" + age,"height:" + height, "weight:" + weight, "serie:" + serie, "photos:" + photos, "ability:" + ability, "race:" + race, "img:" + img, )
     const newPersonage = await Personage.create({
       name,
       description,
       age,
       height,
       weight,
-      state,  
+      state,
       race,
       img,
-	  serieId,
+      serieId,
     });
     const abilities = await Ability.findAll({
       where: { name: ability },
     });
     newPersonage.addAbility(abilities);
 
-	// const anime = await Serie.findAll({
-	// 	where: { name: serie },
-	//   });
+    // const anime = await Serie.findAll({
+    // 	where: { name: serie },
+    //   });
     // newPersonage.addSerie(anime);
 
     if (photos.length > 0) {
@@ -65,9 +65,9 @@ router.get("/", async (req, res) => {
           model: Ability,
           through: { attributes: [] },
         },
-		{
-			model: Serie
-		}
+        {
+          model: Serie,
+        },
       ],
     });
     res.send(personages);
@@ -87,6 +87,9 @@ router.get("/:id", async (req, res) => {
         },
         {
           model: Image,
+        },
+        {
+          model: Serie,
         },
       ],
     });

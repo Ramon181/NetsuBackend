@@ -25,7 +25,7 @@ server.use("/", routes)
 
 const port = 3001
 
-db.sync({force:false}).then(()=>{
+db.sync({force:true}).then(()=>{
     server.listen(port,()=>{
         console.log(`%s listening at ${port}`);
     })
