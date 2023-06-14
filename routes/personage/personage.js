@@ -66,6 +66,9 @@ router.get("/", async (req, res) => {
           through: { attributes: [] },
         },
         {
+          model: Image,
+        },
+        {
           model: Serie,
         },
       ],
