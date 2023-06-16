@@ -3,9 +3,9 @@ const { Sequelize } = require("sequelize");
 const fs = require("fs");
 const path = require('path');
 
-const {DB_USER, DB_PASSWORD, DB_HOST} = process.env
+const { DB_USER, DB_PASSWORD, DB_HOST } = process.env
 
-const sequelize = new Sequelize(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/netsudb`,{
+const sequelize = new Sequelize(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/netsudb`, {
 	logging: false,
 	native: false
 });
@@ -16,10 +16,10 @@ const modelDefiners = [];
 
 // Leemos todos los archivos de la carpeta Models, los requerimos y agregamos al arreglo modelDefiners
 fs.readdirSync(path.join(__dirname, '/models'))
-  .filter((file) => (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js'))
-  .forEach((file) => {
-    modelDefiners.push(require(path.join(__dirname, '/models', file)));
-  });
+	.filter((file) => (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js'))
+	.forEach((file) => {
+		modelDefiners.push(require(path.join(__dirname, '/models', file)));
+	});
 
 // Injectamos la conexion (sequelize) a todos los modelos
 modelDefiners.forEach(model => model(sequelize));
@@ -28,7 +28,7 @@ let entries = Object.entries(sequelize.models);
 let capsEntries = entries.map((entry) => [entry[0][0].toUpperCase() + entry[0].slice(1), entry[1]]);
 sequelize.models = Object.fromEntries(capsEntries);
 
-const {Ability, Personage, User, Review, Post,Gender, Image, Serie, Text, Article} = sequelize.models;
+const { Ability, Personage, User, Review, Post, Gender, Image, Serie, Article } = sequelize.models;
 
 
 // Serie
@@ -61,14 +61,33 @@ Ability.belongsToMany(Personage, {
 
 // Post
 
-Post.hasMany(Text);
-Text.belongsTo(Post);
-
 Post.hasMany(Article);
 Article.belongsTo(Post);
 
-Serie.hasMany(Post);
-Post.belongsTo(Serie)
+Serie.belongsToMany(Post,{
+	through:"PostSerie",
+	timestamps: false
+})
+Post.belongsToMany(Serie,{
+	through:"PostSerie",
+	timestamps: false
+})
+
+// comentarios
+
+User.belongsToMany(Post, {
+	through: Review,
+	foreignKey: "userName",
+	otherKey: "postId",
+});
+Post.belongsToMany(User, {
+	through: Review,
+	foreignKey: "postId",
+	otherKey: "userName",
+});
+
+Post.hasMany(Review);
+Review.belongsTo(Post);
 
 module.exports = {
 	...sequelize.models,

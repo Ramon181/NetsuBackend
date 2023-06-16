@@ -1,21 +1,31 @@
 const { Router } = require("express");
-const { Post, Article, Text, Serie } = require("../../index");
+const { Post, Article, Serie } = require("../../index");
 
 const router = Router();
 
 router.post("/", async (req, res) => {
-  const { title, description, textos, photos, serieId } = req.body;
+  const { title, description, img, textos, photos, serie } = req.body;
   try {
     const newPost = await Post.create({
       title,
       description,
-      serieId,
+      img,
     });
 
-    if (textos.length) {
-      for (let texto of textos) {
+    const series = await Serie.findAll({
+      where: { name: serie },
+    });
+    newPost.addSerie(series);
+
+    const maxLength = Math.max(textos.length, photos.length);
+
+    if (maxLength > 0) {
+      for (let i = 0; i < maxLength; i++) {
+        const texto = textos[i] || '';
+        const photo = photos[i] || '';
+
         try {
-          newPost.createText({ text: texto });
+          newPost.createArticle({ text: texto, article: photo });
         } catch (error) {
           res.status(400).send({ message: "Noe es aque" });
         }
@@ -24,17 +34,6 @@ router.post("/", async (req, res) => {
       res.status(400).send({ message: "Hola es aqi" });
     }
 
-    if (photos.length) {
-      for (let photo of photos) {
-        try {
-          newPost.createArticle({ article: photo });
-        } catch (error) {
-          res.status(400).send({ message: "Not Found" });
-        }
-      }
-    } else {
-      res.status(400).send({ message: "perra" });
-    }
     res.status(200).send(newPost)
   } catch (error) {
     res.status(500).send({ message: "no se pudo jsjsjjsjs" });
@@ -46,9 +45,6 @@ router.get("/", async (req, res) => {
     include: [
       {
         model: Article,
-      },
-      {
-        model: Text,
       },
       {
         model: Serie,
@@ -65,9 +61,6 @@ router.get("/:id", async (req, res) => {
       include: [
         {
           model: Article,
-        },
-        {
-          model: Text,
         },
         {
           model: Serie,
