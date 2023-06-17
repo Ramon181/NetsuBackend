@@ -73,4 +73,14 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+router.delete("/:id",async (req,res) => {
+  const {id} = req.params;
+  try {
+    await Post.destroy({where:{id}})
+    res.status(200).send({message: "Publicacion Eliminada"})
+  } catch (error) {
+    res.status(400).send({ message: "Not Found" });
+  }
+})
+
 module.exports = router;

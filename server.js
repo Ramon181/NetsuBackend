@@ -30,18 +30,3 @@ db.sync({force:false}).then(()=>{
         console.log(`%s listening at ${port}`);
     })
 })
-.then(()=>{
-  superAdmin("12345")
-})
-
-const superAdmin = async (password)=>{
-  await User.findOrCreate({
-    where: { userName: "ryan181" },
-    defaults: {
-      userName: "ryan181",
-      name:"ryan",
-      email: "null@null.null",
-      password: password,
-    },
-  })
-}

@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { Gender, Serie } = require("../../index");
+const { Gender, Serie,Post } = require("../../index");
 
 const router = Router();
 
@@ -30,6 +30,9 @@ router.get("/", async (req, res)=>{
                     model: Gender,
                     through: { attributes: [] },
                 },
+                {
+                    model:Post
+                }
             ],
         })
         res.send(series);

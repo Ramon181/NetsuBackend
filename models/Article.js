@@ -3,7 +3,7 @@ const { DataTypes } = require("sequelize");
 module.exports = (sequelize) => {
 	sequelize.define("article", {
 		text: {
-			type: DataTypes.STRING,
+			type: DataTypes.TEXT,
 			allowNull: false
 		},
 		article: {
