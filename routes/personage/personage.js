@@ -102,4 +102,58 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+router.put("/", async (req, res) => {
+  const {
+    id,
+    name,
+    description,
+    age,
+    height,
+    weight,
+    state,
+    race,
+    img,
+    serieId,
+    photos,
+    ability,
+  } = req.body;
+  try {
+    //   console.log("name:" + name,"description:" +  description,"age:" + age,"height:" + height, "weight:" + weight, "serie:" + serie, "photos:" + photos, "ability:" + ability, "race:" + race, "img:" + img, )
+    Personage.update({
+      name,
+      description,
+      age,
+      height,
+      weight,
+      state,
+      race,
+      img,
+      serieId,
+    }, { where: { id: id } });
+
+    const pers = await Personage.findByPk(id);
+
+    if(ability.length){
+      await pers.setAbility(ability);
+    }
+ 
+
+    if (photos.length) {
+      pers.setImage([]);
+      for (let photo of photos) {
+        try {
+          pers.createImage({ image: photo });
+        } catch (error) {
+          res.status(400).send({ message: "no se pudo la imagen" });
+        }
+      }
+    } else {
+      res.status(400).send({ message: "This person" });
+    }
+    res.status(200).send({ message: "Se ha actualizado correctamente" });
+  } catch (error) {
+    res.status(400).send({ message: error.menssage });
+  }
+})
+
 module.exports = router;
