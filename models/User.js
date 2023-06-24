@@ -25,9 +25,26 @@ module.exports = (sequelize) => {
         },
         banned: {
             type: DataTypes.BOOLEAN,
-            defaultValue: true
+            defaultValue: false
         },
-        profile:{
+        emailVerified: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        emailToken: {
+            type: DataTypes.TEXT,
+        },
+        resetToken: {
+            type: DataTypes.TEXT,
+        },
+        resetTokenExpiration: {
+            type: DataTypes.DATE
+        },
+        isSuperAdmin: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        profile: {
             type: DataTypes.STRING,
             defaultValue: "https://tinypic.host/images/2023/05/17/profile.png"
         }

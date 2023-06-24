@@ -19,10 +19,21 @@ module.exports = (sequelize) => {
       },
       img: {
         type: DataTypes.STRING
-      }
+      },
+      visit: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
+      likes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
+      hidden: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
     },
-    {
-      timestamps: false,
-    }
   );
 };

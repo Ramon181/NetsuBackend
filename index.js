@@ -64,12 +64,12 @@ Ability.belongsToMany(Personage, {
 Post.hasMany(Article);
 Article.belongsTo(Post);
 
-Serie.belongsToMany(Post,{
-	through:"PostSerie",
+Serie.belongsToMany(Post, {
+	through: "PostSerie",
 	timestamps: false
 })
-Post.belongsToMany(Serie,{
-	through:"PostSerie",
+Post.belongsToMany(Serie, {
+	through: "PostSerie",
 	timestamps: false
 })
 
@@ -89,7 +89,22 @@ Post.belongsToMany(User, {
 Post.hasMany(Review);
 Review.belongsTo(Post);
 
+Review.hasMany(Review, {
+	as: 'replies',
+	foreignKey: 'parentId'
+});
+
+Review.belongsTo(Review, {
+	as: 'parent',
+	foreignKey: 'parentId'
+});
+
+
+  
+  
+
 module.exports = {
 	...sequelize.models,
 	db: sequelize
 }
+
