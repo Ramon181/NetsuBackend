@@ -1,8 +1,18 @@
 const { Router } = require("express");
 const { User } = require("../../index");
+const { Op } = require('sequelize');
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcrypt');
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "animegyarakushi@gmail.com",
+    pass: "joahlkfksahjejaf",
+  }
+});
 
 const router = Router();
 
@@ -63,7 +73,7 @@ router.post("/register", async (req, res) => {
   const verificationLink = `http://${req.headers.host}/user/verify-email/${emailToken}`;
 
   const mailOptions = {
-    from: 'Bienvenido a Mi Blog',
+    from: 'Bienvenido a Mi Blog "animegyarakushi@gmail.com"',
     to: newUser.email,
     subject: 'Verificación de correo electrónico',
     text: 'Por favor, verifique su correo electrónico haciendo clic en el siguiente enlace:',
@@ -369,7 +379,7 @@ router.post("/admin/register", async (req, res) => {
 
 // ver todos los usuarios
 
-router.get("/users", async (req, res) => {
+router.get("/all", async (req, res) => {
   const { userName } = req.body;
   let { search, amount, page } = req.query;
   if (!page) page = 0;
@@ -425,6 +435,64 @@ router.put("/ban/:id", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Ha ocurrido un error al banear al usuario." });
+  }
+});
+
+// quitar el baneo del usuario
+
+router.put("/unban/:id", async (req, res) => {
+  const { id } = req.params;
+  const { userName } = req.body;
+
+  try {
+    const userWithUserName = await User.findOne({ where: { userName } });
+
+    if (!userWithUserName || userWithUserName.role !== "admin") {
+      return res.status(403).json({ message: "No se ha encontrado un administrador" });
+    }
+
+    const user = await User.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado." });
+    }
+
+    user.banned = false;
+    await user.save();
+
+    res.json({ message: "Usuario desbaneado correctamente." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Ha ocurrido un error al desbanear al usuario." });
+  }
+});
+
+// eliminar un usuario
+
+router.delete("/users/:id", async (req, res) => {
+  const { id } = req.params;
+  const { userName } = req.body;
+
+  try {
+
+    const userWithUserName = await User.findOne({ where: { userName } });
+
+    if (!userWithUserName || userWithUserName.role !== "admin") {
+      return res.status(403).json({ message: "No se ha encontrado un administrador" });
+    }
+
+    const user = await User.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado." });
+    }
+
+    await user.destroy();
+
+    res.json({ message: "Usuario eliminado correctamente." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Ha ocurrido un error al eliminar al usuario." });
   }
 });
 
