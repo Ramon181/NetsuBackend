@@ -28,7 +28,7 @@ router.post("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     const { id } = req.params;
     try {
-        const comments = await Review.findAll({
+        const comments = await Review.find({
             where: {
                 postId: id,
                 parentId: null,
@@ -120,7 +120,7 @@ router.delete("/", async (req, res) => {
 
 ////////////////////////////////////////Admin/////////////////////////////////////////////////
 
-router.get("/all", async (req, res) => {
+router.get("/", async (req, res) => {
     const { userName } = req.body;
     let { search, amount, page } = req.query;
     if (!page) page = 0;
@@ -132,25 +132,28 @@ router.get("/all", async (req, res) => {
                 console.log("Error ", err);
             }
         );
-        if (userWithUserName && userWithUserName.role === "admin") {
-            const { count, rows: reviews } = await Review.findAndCount({
-                offset: page * amount,
-                limit: amount,
-                where: {
-                    userName: { [Op.iLike]: `%${search}%` }
-                },
-                order: [['createdAt', 'ASC']]
-            });
-            res.send({ count, reviews });
-        } else {
-            res.status(200).send({ message: "No se ha encontrado un administrador" });
+
+        if (!userWithUserName || userWithUserName.role !== "admin") {
+            return res.status(403).json({ message: "No se ha encontrado un administrador" });
         }
+        
+        const reviews = await Review.findAndCountAll({
+            offset: page * amount,
+            limit: amount,
+            where: {
+                userName: { [Op.iLike]: `%${search}%` }
+            },
+            order: [['createdAt', 'ASC']]
+        });
+        res.send(reviews);
+
     } catch (error) {
+        console.log(error)
         res.status(400).send({ message: "Ha ocurrido un error" });
     }
 });
 
-router.put("/all/hidden", async (req, res) => {
+router.put("/hidden", async (req, res) => {
     const { id, userName } = req.body;
     try {
         const userWithUserName = await User.findOne({ where: { userName } }).catch(
@@ -158,20 +161,50 @@ router.put("/all/hidden", async (req, res) => {
                 console.log("Error ", err);
             }
         );
-        if (userWithUserName && userWithUserName.role === "admin") {
-            const comment = await Review.findByPk(id);
-            if (!comment) {
-                return res.status(404).json({ message: 'Comentario no encontrado.' });
-            }
 
-            comment.setHidden(true); // Oculta el comentario
-
-            res.send(comment);
-        } else {
-            res.status(200).send({ message: "No se ha encontrado un administrador" });
+        if (!userWithUserName || userWithUserName.role !== "admin") {
+            return res.status(403).json({ message: "No se ha encontrado un administrador" });
         }
+        const comment = await Review.findByPk(id);
+        if (!comment) {
+            return res.status(404).json({ message: 'Comentario no encontrado.' });
+        }
+
+        comment.setHidden(true); // Oculta el comentario
+
+        res.send(comment);
     } catch (error) {
         res.status(400).send({ message: "Ha ocurrido un error" });
+    }
+});
+
+router.put("/visible", async (req, res) => {
+    const { id, userName } = req.body;
+
+    try {
+        const userWithUserName = await User.findOne({ where: { userName } }).catch(
+            (err) => {
+                console.log("Error ", err);
+            }
+        );
+
+        if (!userWithUserName || userWithUserName.role !== "admin") {
+            return res.status(403).json({ message: "No se ha encontrado un administrador" });
+        }
+
+        const review = await Review.findByPk(id);
+
+        if (!review) {
+            return res.status(404).json({ message: "Comentario no encontrado" });
+        }
+
+        review.hidden = false;
+        await review.save();
+
+        res.status(200).send(review);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Ha ocurrido un error" });
     }
 });
 

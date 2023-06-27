@@ -1,41 +1,79 @@
 const { Router } = require("express");
 const { Op } = require("sequelize");
-const { Gender, Serie, Post, User } = require("../../index");
+const { Gender, Serie, Post, User, Anime, Episode } = require("../../index");
 
 const router = Router();
 
 ////////////////////////////////////////Admin/////////////////////////////////////////////////
 
 router.post("/", async (req, res) => {
-    const { userName, name, description, author, demography, country, img, gender } =
+    const { userName, name, description, author, img, portada, fondo, gender, animes } =
         req.body;
-    try {
-        const userWithUseName = await User.findOne({ where: { userName } }).catch(
-            (err) => {
-                res.status(400).send({Error: err.message});
-            }
-        );
-        if (userWithUseName && userWithUseName.role === "admin") {
-            const newSerie = await Serie.create({
-                name, description, author, demography, country, img
-            })
-            const genderGet = await Gender.findAll({
-                where: { name: gender }
-            })
-            newSerie.addGender(genderGet)
-            res.status(200).send(newSerie)
-        } else {
-            res.status(200).send({ message: "No se ha encontrado un administrador" })
-        }
 
+    try {
+        const userWithUserName = await User.findOne({ where: { userName } });
+
+        if (userWithUserName && userWithUserName.role === "admin") {
+            const newSerie = await Serie.create({
+                name,
+                description,
+                author,
+                img,
+                portada,
+                fondo,
+            });
+
+            const genderGet = await Gender.findAll({ where: { name: gender } });
+            await newSerie.addGender(genderGet);
+
+            if (animes.length > 0) {
+                for (let anime of animes) {
+                    try {
+                        console.log(anime)
+                        const createAnime = await Anime.create(anime);
+                        const episodes = await Episode.bulkCreate(anime.episodes);
+                        await createAnime.addEpisodes(episodes)
+
+                        await newSerie.addAnime(createAnime);
+                    } catch (error) {
+                        Error.captureStackTrace(error)
+                    }
+                }
+            }
+            res.status(200).send(newSerie);
+        } else {
+            res.status(200).send({ message: "No se ha encontrado un administrador" });
+        }
     } catch (error) {
-        res.status(400).send({ message: "not found" })
+        res.status(400).send({ message: "not found" });
     }
 });
 
+router.get("/episodes", async (req, res) => {
+    const series = await Episode.findAll({
+        include: [
+            {
+                model: Anime
+            }
+        ]
+    })
+    res.status(200).send(series)
+})
+
+
+router.get("/serie", async (req, res) => {
+    const series = await Anime.findAll({
+        include: [
+            {
+                model: Episode
+            }
+        ]
+    })
+    res.status(200).send(series)
+})
+
 router.get("/all", async (req, res) => {
-    const { userName } = req.body;
-    let { search, amount, page } = req.query;
+    let { search, amount, page, userName } = req.query;
     if (!page) page = 0;
     if (!amount) amount = 10;
     if (!search) search = "";
@@ -58,6 +96,10 @@ router.get("/all", async (req, res) => {
                         through: { attributes: [] },
                     },
                     {
+                        model: Anime,
+                        include: [Episode],
+                    },
+                    {
                         model: Post
                     }
                 ],
@@ -73,39 +115,67 @@ router.get("/all", async (req, res) => {
 });
 
 router.put("/modify", async (req, res) => {
-    const { id, userName, name, description, author, demography, country, img, gender } = req.body;
+    const { id, userName, name, description, author, img, portada, fondo, gender, animes } = req.body;
+
     try {
-        const userWithUseName = await User.findOne({ where: { userName } }).catch(
-            (err) => {
-                console.log("Error ", err);
-            }
-        );
-        if (userWithUseName && userWithUseName.role === "admin") {
-            await Serie.update({ name, description, author, demography, country, img },
-                {
-                    where: { id: id }
-                })
+        const userWithUserName = await User.findOne({ where: { userName } });
+
+        if (userWithUserName && userWithUserName.role === "admin") {
+            await Serie.update({ name, description, author, portada, fondo, img }, { where: { id: id } });
+
             const series = await Serie.findByPk(id);
 
-            const genderGet = await Gender.findAll({
-                where: { name: gender }
-            })
-            await series.setGenders(genderGet)
+            if (animes.length > 0) {
+                for (let anime of animes) {
+                    try {
+                        const existingAnime = await Anime.findByPk(anime.id);
 
-            res.status(200).send({ message: "Serie Actualizada" })
+                        if (existingAnime) {
+                            // Actualizar anime existente
+                            await existingAnime.update(anime);
+                        } else {
+                            // Crear nuevo anime
+                            const createdAnime = await Anime.create(anime);
+                            await series.addAnime(createdAnime);
+                        }
 
+                        if (anime.episodes.length > 0) {
+                            for (let episode of anime.episodes) {
+                                if (episode.id) {
+                                    // Actualizar episodio existente
+                                    const existingEpisode = await Episode.findByPk(episode.id);
+                                    if (existingEpisode) {
+                                        await existingEpisode.update(episode);
+                                    }
+                                } else {
+                                    // Crear nuevo episodio
+                                    const createdEpisode = await Episode.create(episode);
+                                    await existingAnime.addEpisode(createdEpisode);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.log(error);
+                    }
+                }
+            }
+
+            const genderGet = await Gender.findAll({ where: { name: gender } });
+            await series.setGenders(genderGet);
+
+            res.status(200).send({ message: "Serie Actualizada" });
         } else {
-            res.status(200).send({ message: "No se ha encontrado un administrador" })
+            res.status(200).send({ message: "No se ha encontrado un administrador" });
         }
-
     } catch (error) {
-        res.status(400).send({ message: "not found" })
+        res.status(400).send({ message: "not found" });
     }
 });
 
-router.delete("/:id", async (req, res) => {
-    const { id } = req.params
-    const { userName } = req.body
+
+
+router.delete("/:userName/:id", async (req, res) => {
+    const { userName, id } = req.params
     try {
         const userWithUseName = await User.findOne({ where: { userName } }).catch(
             (err) => {
@@ -161,6 +231,10 @@ router.get("/series/:id", async (req, res) => {
                 {
                     model: Gender,
                     through: { attributes: [] },
+                },
+                {
+                    model: Anime,
+                    include: [Episode],
                 },
                 {
                     model: Post

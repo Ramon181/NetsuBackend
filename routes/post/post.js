@@ -1,5 +1,6 @@
 const { Router } = require("express");
-const { Post, Article, Serie, Review } = require("../../index");
+const { Op } = require('sequelize');
+const { Post, Article, Serie, Review, User } = require("../../index");
 
 const router = Router();
 
@@ -8,8 +9,12 @@ const router = Router();
 router.post("/", async (req, res) => {
   const { userName, title, description, img, textos, photos, serie } = req.body;
   try {
-    const userWithUseName = await User.findOne({ where: { userName } });
-    if (!userWithUseName || userWithUseName.role !== "admin") {
+    const userWithUseName = await User.findOne({ where: { userName } }).catch(
+      (err) => {
+        console.log("Error ", err);
+      }
+    );
+    if (!userWithUseName && userWithUseName.role !== "admin") {
       return res.status(403).json({ message: "No se ha encontrado un administrador" });
     }
 
@@ -56,9 +61,13 @@ router.get("/all", async (req, res) => {
   if (!search) search = "";
 
   try {
-    const userWithUserName = await User.findOne({ where: { userName } });
+    const userWithUseName = await User.findOne({ where: { userName } }).catch(
+      (err) => {
+        console.log("Error ", err);
+      }
+    );
 
-    if (!userWithUserName || userWithUserName.role !== "admin") {
+    if (!userWithUseName && userWithUseName.role !== "admin") {
       return res.status(403).json({ message: "No se ha encontrado un administrador" });
     }
 
@@ -90,8 +99,12 @@ router.put("/", async (req, res) => {
   const { id, userName, title, description, img, serie, textos, photos } = req.body;
 
   try {
-    const userWithUserName = await User.findOne({ where: { userName } });
-    if (!userWithUserName || userWithUserName.role !== "admin") {
+    const userWithUseName = await User.findOne({ where: { userName } }).catch(
+      (err) => {
+        console.log("Error ", err);
+      }
+    );
+    if (!userWithUseName || userWithUseName.role !== "admin") {
       return res.status(403).json({ message: "No se ha encontrado un administrador" });
     }
 
@@ -134,8 +147,12 @@ router.put("/", async (req, res) => {
 router.put("/all/hidden", async (req, res) => {
   const { id, userName } = req.body;
   try {
-    const userWithUserName = await User.findOne({ where: { userName } });
-    if (!userWithUserName || userWithUserName.role !== "admin") {
+    const userWithUseName = await User.findOne({ where: { userName } }).catch(
+      (err) => {
+        console.log("Error ", err);
+      }
+    );
+    if (!userWithUseName && userWithUseName.role !== "admin") {
       return res.status(403).json({ message: "No se ha encontrado un administrador" });
     }
 
@@ -154,8 +171,58 @@ router.put("/all/hidden", async (req, res) => {
   }
 });
 
+router.put("/all/visible", async (req, res) => {
+  const { id, userName } = req.body;
+  try {
+    const userWithUseName = await User.findOne({ where: { userName } }).catch(
+      (err) => {
+        console.log("Error ", err);
+      }
+    );
+    if (!userWithUseName && userWithUseName.role !== "admin") {
+      return res.status(403).json({ message: "No se ha encontrado un administrador" });
+    }
+
+    const post = await Post.findByPk(id);
+    if (!post) {
+      return res.status(404).json({ message: "Publicación no encontrada" });
+    }
+
+    post.hidden = false;
+    await post.save();
+
+    res.status(200).send(post);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Ha ocurrido un error" });
+  }
+});
 
 ////////////////////////////////////////Usuario/////////////////////////////////////////////////
+
+router.get("/", async (req, res) => {
+  let { search } = req.query;
+  if (!search) search = "";
+  try {
+    const publicaciones = await Post.findAll({
+      order: [['createdAt', 'DESC']],
+      where: {
+        title: { [Op.iLike]: `%${search}%` }
+      },
+      include: [
+        {
+          model: Article,
+        },
+        {
+          model: Serie,
+        },
+      ],
+    });
+    res.status(200).json(publicaciones);
+  } catch (error) {
+    res.status(500).json({ message: 'Ha ocurrido un error al obtener las 10 primeras publicaciones más recientes.' });
+  }
+});
 
 router.get("/recientes", async (req, res) => {
   let { search } = req.query;
@@ -187,7 +254,7 @@ router.get("/vistas", async (req, res) => {
   if (!search) search = "";
   try {
     const publicaciones = await Post.findAll({
-      order: [['visitas', 'DESC']],
+      order: [['visit', 'DESC']],
       limit: 10,
       where: {
         title: { [Op.iLike]: `%${search}%` }
@@ -203,6 +270,7 @@ router.get("/vistas", async (req, res) => {
     });
     res.status(200).json(publicaciones);
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: 'Ha ocurrido un error al obtener las 10 primeras publicaciones más visitadas.' });
   }
 });
@@ -266,14 +334,34 @@ router.put("/like/:id", async (req, res) => {
   }
 });
 
-router.put("/:id/visitas", async (req, res) => {
+router.put("/dislike/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const post = await Post.findByPk(id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Publicación no encontrada.' });
+    }
+
+    post.likes -= 1;
+    await post.save();
+
+    res.status(200).json({ message: 'Like quitado correctamente.' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Ha ocurrido un error al decrementar el like.' });
+  }
+});
+
+router.put("/visitas/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const post = await Post.findByPk(id);
     if (!post) {
       return res.status(404).json({ message: 'Publicación no encontrada.' });
     }
-    post.visitas += 1;
+    post.visit += 1;
     await post.save();
     res.status(200).json({ message: 'Visitas incrementadas correctamente.' });
   } catch (error) {

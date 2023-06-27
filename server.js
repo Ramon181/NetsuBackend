@@ -51,7 +51,7 @@ const createSuperAdmin = async () => {
     // Crea el usuario superadmin en la base de datos
     await User.create({
       userName: 'luciano',
-      password: hashedPassword,
+      password: password,
       isSuperAdmin: true,
       email:"lucian@gmail.com",
       name:"luciano", 

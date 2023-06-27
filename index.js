@@ -28,7 +28,7 @@ let entries = Object.entries(sequelize.models);
 let capsEntries = entries.map((entry) => [entry[0][0].toUpperCase() + entry[0].slice(1), entry[1]]);
 sequelize.models = Object.fromEntries(capsEntries);
 
-const { Ability, Personage, User, Review, Post, Gender, Image, Serie, Article } = sequelize.models;
+const { Ability, Personage, User, Review, Post, Gender, Image, Serie, Article, Anime, Episode } = sequelize.models;
 
 
 // Serie
@@ -40,7 +40,15 @@ Serie.belongsToMany(Gender, {
 Gender.belongsToMany(Serie, {
 	through: "SerieGender",
 	timestamps: false
-})
+});
+
+Anime.hasMany(Episode);
+
+Episode.belongsTo(Anime);
+
+Anime.belongsTo(Serie);
+
+Serie.hasMany(Anime);
 
 // Personage
 
@@ -100,8 +108,8 @@ Review.belongsTo(Review, {
 });
 
 
-  
-  
+
+
 
 module.exports = {
 	...sequelize.models,
