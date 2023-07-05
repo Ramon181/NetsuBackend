@@ -5,6 +5,9 @@ module.exports = (sequelize) => {
         name: {
             type: DataTypes.STRING
         },
+        description:{
+            type:DataTypes.TEXT
+        },
         start_date: {
             type: DataTypes.INTEGER
         },
